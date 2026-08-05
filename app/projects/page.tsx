@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function ProjectsPage() {
   return (
     <section className="relative px-4 py-16 sm:px-6 sm:py-20">
-      <SketchBackground faint />
+      <SketchBackground density="sparse" />
       <Container className="relative z-10">
         <div className="mb-10 max-w-xl">
           <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">

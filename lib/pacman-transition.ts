@@ -1,8 +1,8 @@
 /**
  * Fullscreen Pac-Man cross-site transition.
- * - to-blog: Pac-Man eats pellets while hunted by a ghost
- * - to-portfolio: reverse — Pac-Man chases and eats the ghost
- * Then silently navigates (no browser loading chrome we control; overlay stays until unload).
+ * - to-blog: Pac-Man runs right, eats pellets, hunted by ghost from behind
+ * - to-portfolio: reverse story — Pac-Man runs right, chases & eats the ghost
+ * Always faces the direction of travel (right).
  */
 
 import { XSITE_KEY, type XSiteDirection } from "@/lib/site";
@@ -45,16 +45,15 @@ export function playPacmanTransition(
   const scale = Math.max(0.7, Math.min(w / 640, 1.4));
   const r = 18 * scale;
 
+  // reverse = blog → portfolio (chase & eat ghost)
   const reverse = direction === "to-portfolio";
-  // reverse: pacman chases ghost leftward; normal: pacman flees right, ghost hunts
-  const pacStart = reverse ? w * 0.15 : w * 0.12;
-  const pacEnd = reverse ? w * 0.78 : w * 0.72;
-  const ghostOffset = reverse ? 90 * scale : -100 * scale;
+  // Both stories travel left → right; mouth always faces right
+  const pacStart = w * 0.12;
+  const pacEnd = w * 0.78;
 
-  // pellets
   const pellets: { x: number; eaten: boolean }[] = [];
-  const pelletStart = w * 0.18;
-  const pelletEnd = w * 0.82;
+  const pelletStart = w * 0.2;
+  const pelletEnd = w * 0.85;
   const pelletCount = 14;
   for (let i = 0; i < pelletCount; i++) {
     pellets.push({
@@ -71,34 +70,33 @@ export function playPacmanTransition(
     navigated = true;
     try {
       sessionStorage.setItem(XSITE_KEY, direction);
+      // Portfolio reads this before paint to skip circle loader + keep black veil
+      if (direction === "to-portfolio") {
+        sessionStorage.setItem("pwnhub-skip-loader", "1");
+      } else {
+        sessionStorage.removeItem("pwnhub-skip-loader");
+      }
     } catch {
       /* private mode */
     }
-    // Keep overlay painted during navigation so native loading chrome is covered
     window.location.href = url;
   };
 
-  // Soft timeout if animation stalls
   const failSafe = window.setTimeout(go, DURATION_MS + 800);
 
-  function drawPac(x: number, y: number, facingRight: boolean, mouth: number) {
-    const open = 0.25 + mouth * 0.35;
+  function drawPac(x: number, y: number, mouth: number) {
+    // Face RIGHT (direction of travel)
+    const open = 0.22 + mouth * 0.38;
     ctx.fillStyle = "#ffe14f";
     ctx.beginPath();
-    if (facingRight) {
-      ctx.arc(x, y, r, open * Math.PI, (2 - open) * Math.PI, false);
-    } else {
-      ctx.arc(x, y, r, (1 + open) * Math.PI, (1 - open) * Math.PI, false);
-    }
+    ctx.arc(x, y, r, open * Math.PI, (2 - open) * Math.PI, false);
     ctx.lineTo(x, y);
     ctx.closePath();
     ctx.fill();
 
-    // eye
     ctx.fillStyle = "#111";
-    const ex = facingRight ? x + r * 0.15 : x - r * 0.15;
     ctx.beginPath();
-    ctx.arc(ex, y - r * 0.35, r * 0.12, 0, Math.PI * 2);
+    ctx.arc(x + r * 0.12, y - r * 0.38, r * 0.12, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -114,18 +112,14 @@ export function playPacmanTransition(
     ctx.beginPath();
     ctx.arc(x, y - gh * 0.15, gw / 2, Math.PI, 0, false);
     ctx.lineTo(x + gw / 2, y + gh * 0.45);
-    // scalloped bottom
-    const scallops = 4;
-    for (let i = scallops; i >= 0; i--) {
-      const sx = x + gw / 2 - (gw * i) / scallops;
-      const sy =
-        y + gh * 0.45 + (i % 2 === 0 ? 0 : -gh * 0.12);
+    for (let i = 4; i >= 0; i--) {
+      const sx = x + gw / 2 - (gw * i) / 4;
+      const sy = y + gh * 0.45 + (i % 2 === 0 ? 0 : -gh * 0.12);
       ctx.lineTo(sx, sy);
     }
     ctx.closePath();
     ctx.fill();
 
-    // eyes
     ctx.fillStyle = "#fff";
     const eyeY = y - gh * 0.2;
     ctx.beginPath();
@@ -134,20 +128,18 @@ export function playPacmanTransition(
     ctx.fill();
     ctx.fillStyle = frightened ? "#fff" : "#2121de";
     ctx.beginPath();
-    ctx.arc(x - gw * 0.15, eyeY, gw * 0.06, 0, Math.PI * 2);
-    ctx.arc(x + gw * 0.21, eyeY, gw * 0.06, 0, Math.PI * 2);
+    ctx.arc(x - gw * 0.12, eyeY, gw * 0.06, 0, Math.PI * 2);
+    ctx.arc(x + gw * 0.24, eyeY, gw * 0.06, 0, Math.PI * 2);
     ctx.fill();
   }
 
   function frame(now: number) {
     const t = Math.min(1, (now - t0) / DURATION_MS);
-    // ease in-out
     const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, w, h);
 
-    // corridor rails
     ctx.strokeStyle = "#2121de";
     ctx.lineWidth = 3 * scale;
     ctx.beginPath();
@@ -158,15 +150,10 @@ export function playPacmanTransition(
     ctx.stroke();
 
     const pacX = pacStart + (pacEnd - pacStart) * e;
-    const facingRight = !reverse;
     const mouth = (Math.sin(now / 80) + 1) / 2;
 
-    // eat pellets when pacman passes
     for (const p of pellets) {
-      if (!p.eaten) {
-        const crossed = reverse ? pacX > p.x - r * 0.4 : pacX > p.x - r * 0.4;
-        if (crossed && Math.abs(pacX - p.x) < r * 1.2) p.eaten = true;
-      }
+      if (!p.eaten && pacX + r * 0.5 >= p.x) p.eaten = true;
       if (!p.eaten) {
         ctx.fillStyle = "#ffb8ae";
         ctx.beginPath();
@@ -175,25 +162,22 @@ export function playPacmanTransition(
       }
     }
 
-    let ghostX = pacX + ghostOffset;
-    // reverse: ghost flees ahead then gets caught near the end
+    let ghostX: number;
     if (reverse) {
-      const flee = pacStart + 70 * scale + (pacEnd - pacStart) * Math.min(1, e * 1.05);
-      ghostX = flee;
-      if (t > 0.82) {
-        // snap toward pac for "eat"
-        ghostX = pacX + r * 0.3;
-      }
+      // Ghost flees ahead (to the right); Pac-Man chases & catches
+      ghostX =
+        pacStart + 100 * scale + (pacEnd - pacStart) * Math.min(1, e * 0.92);
+      if (t > 0.78) ghostX = pacX + r * 0.55;
     } else {
-      // hunt: close the gap slightly over time
-      ghostX = pacX - 95 * scale + e * 28 * scale;
+      // Ghost hunts from behind (left of Pac-Man)
+      ghostX = pacX - 100 * scale + e * 32 * scale;
     }
 
-    const frightened = reverse && t > 0.55;
-    if (!(reverse && t > 0.9)) {
+    const frightened = reverse && t > 0.5;
+    if (!(reverse && t > 0.88)) {
       drawGhost(ghostX, cy, "#ff0000", frightened);
     } else {
-      // eyes only after eaten
+      // eyes fleeing after eat
       ctx.fillStyle = "#fff";
       ctx.beginPath();
       ctx.arc(ghostX - 6, cy - 4, 4 * scale, 0, Math.PI * 2);
@@ -201,19 +185,20 @@ export function playPacmanTransition(
       ctx.fill();
       ctx.fillStyle = "#2121de";
       ctx.beginPath();
-      ctx.arc(ghostX - 5, cy - 4, 2 * scale, 0, Math.PI * 2);
-      ctx.arc(ghostX + 7, cy - 4, 2 * scale, 0, Math.PI * 2);
+      ctx.arc(ghostX - 4, cy - 4, 2 * scale, 0, Math.PI * 2);
+      ctx.arc(ghostX + 8, cy - 4, 2 * scale, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    drawPac(pacX, cy, facingRight, mouth);
+    drawPac(pacX, cy, mouth);
 
-    // caption
     ctx.fillStyle = "rgba(255,255,255,0.55)";
     ctx.font = `${12 * scale}px ui-monospace, monospace`;
     ctx.textAlign = "center";
     ctx.fillText(
-      reverse ? "pwnhub.in  ←  chasing the stack" : "blog.pwnhub.in  →  writing mode",
+      reverse
+        ? "pwnhub.in  →  chasing the stack"
+        : "blog.pwnhub.in  →  writing mode",
       w / 2,
       h - 16 * scale,
     );
@@ -222,7 +207,6 @@ export function playPacmanTransition(
       requestAnimationFrame(frame);
     } else {
       window.clearTimeout(failSafe);
-      // brief hold then navigate
       window.setTimeout(go, 120);
     }
   }
@@ -230,7 +214,6 @@ export function playPacmanTransition(
   requestAnimationFrame(frame);
 }
 
-/** On arrival: skip loaders / flash if we came via Pac-Man handoff */
 export function consumeXSiteArrival(): XSiteDirection | null {
   if (typeof window === "undefined") return null;
   try {

@@ -23,7 +23,7 @@ export default function HomePage() {
   return (
     <>
       <section className="relative overflow-hidden px-4 py-24 sm:px-6 sm:py-32">
-        <SketchBackground />
+        <SketchBackground density="hero" />
         <div
           aria-hidden
           className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent"
@@ -110,8 +110,9 @@ export default function HomePage() {
         <Separator id="sep-2" label="what ships" />
       </Container>
 
-      <section className="px-4 py-16 sm:px-6">
-        <Container>
+      <section className="relative px-4 py-16 sm:px-6">
+        <SketchBackground density="page" />
+        <Container className="relative z-10">
           <div className="mb-10 max-w-lg">
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               on this site

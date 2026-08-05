@@ -30,12 +30,36 @@ export interface StickyNoteProps
   title?: ReactNode;
 }
 
-const noteColors: Record<StickyNoteColor, { bg: string; border: string }> = {
-  blue: { bg: "oklch(0.95 0.05 240)", border: "oklch(0.65 0.12 240)" },
-  green: { bg: "oklch(0.95 0.06 145)", border: "oklch(0.60 0.14 145)" },
-  orange: { bg: "oklch(0.95 0.08 55)", border: "oklch(0.65 0.16 55)" },
-  pink: { bg: "oklch(0.95 0.06 340)", border: "oklch(0.65 0.14 340)" },
-  yellow: { bg: "oklch(0.97 0.09 90)", border: "oklch(0.75 0.16 90)" },
+/** Paper fills + dark ink text for readable contrast on dark site chrome */
+const noteColors: Record<
+  StickyNoteColor,
+  { bg: string; border: string; ink: string }
+> = {
+  blue: {
+    bg: "oklch(0.88 0.04 240)",
+    border: "oklch(0.45 0.12 240)",
+    ink: "oklch(0.22 0.06 240)",
+  },
+  green: {
+    bg: "oklch(0.88 0.05 145)",
+    border: "oklch(0.42 0.12 145)",
+    ink: "oklch(0.22 0.06 145)",
+  },
+  orange: {
+    bg: "oklch(0.88 0.07 55)",
+    border: "oklch(0.48 0.14 55)",
+    ink: "oklch(0.25 0.06 50)",
+  },
+  pink: {
+    bg: "oklch(0.88 0.05 340)",
+    border: "oklch(0.48 0.12 340)",
+    ink: "oklch(0.25 0.06 340)",
+  },
+  yellow: {
+    bg: "oklch(0.9 0.1 95)",
+    border: "oklch(0.5 0.12 85)",
+    ink: "oklch(0.22 0.04 80)",
+  },
 };
 
 export function StickyNote({
@@ -75,7 +99,7 @@ export function StickyNote({
   });
   const roughStyle = resolveRoughVars({ stroke, strokeMuted, fill });
 
-  const { bg, border: borderColor } = noteColors[color];
+  const { bg, border: borderColor, ink } = noteColors[color];
   const FOLD = 20; // fold triangle size
 
   const draw = useCallback(
@@ -199,16 +223,18 @@ export function StickyNote({
           style={{ width: FOLD + 4, height: FOLD + 4 }}
         />
 
-        <div className="relative">
+        <div className="relative" style={{ color: ink }}>
           {title ? (
             <p
-              className="mb-2 text-sm font-semibold"
+              className="mb-2 text-sm font-bold tracking-wide"
               style={{ color: borderColor }}
             >
               {title}
             </p>
           ) : null}
-          <div className="text-sm text-foreground/80">{children}</div>
+          <div className="text-sm font-medium leading-snug opacity-95">
+            {children}
+          </div>
         </div>
       </div>
     </div>

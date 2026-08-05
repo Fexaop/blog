@@ -47,7 +47,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   return (
     <article>
       <header className="relative px-4 pt-12 pb-8 sm:px-6 sm:pt-16">
-        <SketchBackground faint />
+        <SketchBackground density="sparse" />
         <Container className="relative z-10 max-w-3xl">
           <Link
             href="/blog/"
