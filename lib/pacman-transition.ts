@@ -1,10 +1,8 @@
 /**
- * Pac-Man cross-site transition (canvas).
+ * Pac-Man cross-site transition (blog).
  *
- * to-blog:        Pac-Man AHEAD (right), eats candy; red ghost BEHIND hunting.
- * to-portfolio:   Pac-Man chases blue ghost ahead and eats it.
- *
- * Cross-origin handoff: ?xsite=… query param.
+ * to-blog:      Pac-Man flees right eating candy; red ghost BEHIND hunting.
+ * to-portfolio: Pac-Man chases blue ghost AHEAD and eats it.
  */
 
 import {
@@ -13,7 +11,7 @@ import {
   type XSiteDirection,
 } from "@/lib/site";
 
-const DURATION_MS = 2800;
+const DURATION_MS = 2600;
 
 export function playPacmanTransition(
   url: string,
@@ -30,7 +28,7 @@ export function playPacmanTransition(
 
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const cssW = Math.min(window.innerWidth, 960);
-  const cssH = Math.min(Math.round(window.innerHeight * 0.45), 340);
+  const cssH = Math.min(Math.round(window.innerHeight * 0.48), 360);
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(cssW * dpr);
   canvas.height = Math.round(cssH * dpr);
@@ -46,48 +44,47 @@ export function playPacmanTransition(
   const W = cssW;
   const H = cssH;
   const cy = H * 0.5;
-  const R = Math.max(16, Math.min(26, W * 0.032));
+  const R = Math.max(18, Math.min(28, W * 0.034));
 
-  const isChase = direction === "to-portfolio";
-  const laneL = W * 0.08;
-  const laneR = W * 0.92;
+  const chaseGhost = direction === "to-portfolio";
+  const laneL = W * 0.07;
+  const laneR = W * 0.93;
+  const pathLen = laneR - laneL - R * 3;
 
   type Candy = { x: number; eaten: boolean; power: boolean };
   const candy: Candy[] = [];
-  const candyCount = 18;
-  for (let i = 0; i < candyCount; i++) {
+  const n = 20;
+  for (let i = 0; i < n; i++) {
     candy.push({
-      x: laneL + R * 2 + ((laneR - laneL - R * 4) * i) / (candyCount - 1),
+      x: laneL + R * 2.2 + (pathLen * i) / (n - 1),
       eaten: false,
-      power: i === 0 || i === candyCount - 1,
+      power: i === 0 || i === n - 1,
     });
   }
 
   const t0 = performance.now();
-  let done = false;
+  let finished = false;
 
   const finish = () => {
-    if (done) return;
-    done = true;
-    // Sets cookie Domain=.pwnhub.in + ?xsite= query (cross-origin safe)
+    if (finished) return;
+    finished = true;
     window.location.replace(withXSiteParam(url, direction));
   };
-  const failSafe = window.setTimeout(finish, DURATION_MS + 700);
+  const failSafe = window.setTimeout(finish, DURATION_MS + 500);
 
   function drawPac(x: number, y: number, mouth: number) {
-    const open = 0.18 + mouth * 0.32;
+    const a = (0.2 + mouth * 0.35) * Math.PI;
     ctx.save();
     ctx.translate(x, y);
-    ctx.fillStyle = "#ffe14f";
+    ctx.fillStyle = "#ffcc00";
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    // Face RIGHT — mouth opens toward +x
-    ctx.arc(0, 0, R, open * Math.PI, (2 - open) * Math.PI, false);
+    ctx.arc(0, 0, R, a, -a, false);
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = "#111";
     ctx.beginPath();
-    ctx.arc(R * 0.05, -R * 0.45, R * 0.14, 0, Math.PI * 2);
+    ctx.arc(R * 0.1, -R * 0.42, R * 0.13, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -95,66 +92,60 @@ export function playPacmanTransition(
   function drawGhost(
     x: number,
     y: number,
-    color: string,
-    lookDir: number,
+    bodyColor: string,
+    lookRight: boolean,
     frightened: boolean,
   ) {
-    const gw = R * 1.85;
-    const gh = R * 2.0;
+    const gw = R * 1.9;
+    const gh = R * 2.05;
     ctx.save();
     ctx.translate(x, y);
-
-    ctx.fillStyle = frightened ? "#2121ff" : color;
+    ctx.fillStyle = frightened ? "#2121ff" : bodyColor;
     ctx.beginPath();
-    ctx.arc(0, -gh * 0.15, gw / 2, Math.PI, 0, false);
-    ctx.lineTo(gw / 2, gh * 0.4);
-    for (let i = 3; i >= 0; i--) {
-      const t = i / 3;
-      const sx = gw / 2 - gw * t;
-      const sy = gh * 0.4 + (i % 2 === 0 ? 0 : -gh * 0.16);
+    ctx.arc(0, -gh * 0.12, gw / 2, Math.PI, 0, false);
+    ctx.lineTo(gw / 2, gh * 0.42);
+    for (let i = 4; i >= 0; i--) {
+      const sx = gw / 2 - (gw * i) / 4;
+      const sy = gh * 0.42 + (i % 2 === 0 ? 0 : -gh * 0.15);
       ctx.lineTo(sx, sy);
     }
     ctx.closePath();
     ctx.fill();
 
-    const ey = -gh * 0.2;
-    const ex = gw * 0.2;
+    const ey = -gh * 0.18;
+    const ex = gw * 0.22;
     ctx.fillStyle = "#fff";
     ctx.beginPath();
-    ctx.ellipse(-ex, ey, gw * 0.15, gw * 0.18, 0, 0, Math.PI * 2);
-    ctx.ellipse(ex, ey, gw * 0.15, gw * 0.18, 0, 0, Math.PI * 2);
+    ctx.ellipse(-ex, ey, gw * 0.16, gw * 0.2, 0, 0, Math.PI * 2);
+    ctx.ellipse(ex, ey, gw * 0.16, gw * 0.2, 0, 0, Math.PI * 2);
     ctx.fill();
-
-    ctx.fillStyle = frightened ? "#fff" : "#2121de";
-    const px = lookDir * gw * 0.06;
+    ctx.fillStyle = frightened ? "#fff" : "#00f";
+    const look = lookRight ? gw * 0.05 : -gw * 0.05;
     ctx.beginPath();
-    ctx.arc(-ex + px, ey, gw * 0.08, 0, Math.PI * 2);
-    ctx.arc(ex + px, ey, gw * 0.08, 0, Math.PI * 2);
+    ctx.arc(-ex + look, ey, gw * 0.08, 0, Math.PI * 2);
+    ctx.arc(ex + look, ey, gw * 0.08, 0, Math.PI * 2);
     ctx.fill();
-
     if (frightened) {
       ctx.strokeStyle = "#ffb8ff";
-      ctx.lineWidth = 1.6;
-      ctx.lineCap = "round";
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(-gw * 0.3, gh * 0.08);
-      ctx.quadraticCurveTo(-gw * 0.1, gh * 0.2, 0, gh * 0.08);
-      ctx.quadraticCurveTo(gw * 0.1, -gh * 0.02, gw * 0.3, gh * 0.08);
+      ctx.moveTo(-gw * 0.28, gh * 0.1);
+      ctx.quadraticCurveTo(0, gh * 0.22, gw * 0.28, gh * 0.1);
       ctx.stroke();
     }
     ctx.restore();
   }
 
-  function drawGhostEyes(x: number, y: number) {
+  function drawEyes(x: number, y: number) {
     ctx.fillStyle = "#fff";
     ctx.beginPath();
-    ctx.ellipse(x - 8, y - 3, 6, 7, 0, 0, Math.PI * 2);
-    ctx.ellipse(x + 8, y - 3, 6, 7, 0, 0, Math.PI * 2);
+    ctx.ellipse(x - 9, y, 6, 7, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + 9, y, 6, 7, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#2121de";
+    ctx.fillStyle = "#00f";
     ctx.beginPath();
-    ctx.arc(x - 6, y - 3, 2.5, 0, Math.PI * 2);
-    ctx.arc(x + 10, y - 3, 2.5, 0, Math.PI * 2);
+    ctx.arc(x - 7, y, 2.5, 0, Math.PI * 2);
+    ctx.arc(x + 11, y, 2.5, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -165,76 +156,77 @@ export function playPacmanTransition(
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, W, H);
 
-    const railY1 = cy - R * 2.6;
-    const railY2 = cy + R * 2.6;
+    const top = cy - R * 2.7;
+    const bot = cy + R * 2.7;
     ctx.strokeStyle = "#2121de";
-    ctx.lineWidth = 3.5;
-    ctx.strokeRect(laneL - 8, railY1 - 4, laneR - laneL + 16, railY2 - railY1 + 8);
+    ctx.lineWidth = 4;
+    ctx.strokeRect(laneL - 10, top - 6, laneR - laneL + 20, bot - top + 12);
     ctx.strokeStyle = "#1919a6";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(laneL, railY1);
-    ctx.lineTo(laneR, railY1);
-    ctx.moveTo(laneL, railY2);
-    ctx.lineTo(laneR, railY2);
+    ctx.moveTo(laneL, top);
+    ctx.lineTo(laneR, top);
+    ctx.moveTo(laneL, bot);
+    ctx.lineTo(laneR, bot);
     ctx.stroke();
 
-    // Pac-Man moves left → right (always AHEAD of hunting ghost)
-    const pacX = laneL + R * 1.5 + (laneR - laneL - R * 3) * e;
+    const pathLen = laneR - laneL - R * 3;
+    const pacX = laneL + R * 1.6 + pathLen * e;
+    const mouth = (Math.sin(now / 60) + 1) / 2;
 
     let ghostX: number;
-    let ghostEaten = false;
-    let ghostFrightened = false;
-    const ghostLook = 1; // look right toward / along path
+    let frightened = false;
+    let eaten = false;
 
-    if (isChase) {
-      ghostFrightened = t > 0.28;
-      const lead = R * 4.5 * (1 - e * 0.75) + R * 1.2;
-      ghostX = pacX + lead;
-      if (t > 0.8) ghostX = pacX + R * 0.7;
-      if (t > 0.88) ghostEaten = true;
+    if (chaseGhost) {
+      // Ghost AHEAD — Pac-Man chases & eats
+      frightened = t > 0.25;
+      const lead = R * 5 * (1 - e * 0.7) + R * 1.4;
+      ghostX = Math.min(laneR - R, pacX + lead);
+      if (t > 0.78) ghostX = pacX + R * 0.85;
+      if (t > 0.88) eaten = true;
     } else {
-      // HUNT: ghost BEHIND (left of) Pac-Man — Pac-Man is ahead eating candy
-      const gap = R * 5.5 - e * R * 2.2;
-      ghostX = pacX - Math.max(gap, R * 3.2);
+      // Ghost BEHIND — hunts Pac-Man (portfolio → blog)
+      const minGap = R * 2.8;
+      const startGap = R * 6.5;
+      const gap = startGap - e * (startGap - minGap);
+      ghostX = pacX - Math.max(gap, minGap);
+      if (ghostX < laneL + R) ghostX = laneL + R;
     }
 
-    // candy
-    const mouthFront = pacX + R * 0.55;
+    const biteX = pacX + R * 0.35;
     for (const c of candy) {
-      if (!c.eaten && mouthFront >= c.x) c.eaten = true;
+      if (!c.eaten && biteX >= c.x) c.eaten = true;
       if (c.eaten) continue;
-      ctx.fillStyle = c.power ? "#ffb897" : "#ffb8ae";
+      ctx.fillStyle = c.power ? "#ffb897" : "#ffcc66";
       ctx.beginPath();
-      ctx.arc(c.x, cy, c.power ? R * 0.38 : R * 0.2, 0, Math.PI * 2);
+      ctx.arc(c.x, cy, c.power ? R * 0.42 : R * 0.22, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    if (!ghostEaten) {
-      drawGhost(ghostX, cy, "#ff0000", ghostLook, ghostFrightened);
+    if (!eaten) {
+      drawGhost(ghostX, cy, "#ff0000", true, frightened);
     } else {
-      drawGhostEyes(ghostX + (t - 0.88) * W * 0.15, cy - (t - 0.88) * 40);
+      drawEyes(ghostX + (t - 0.88) * 100, cy - 8);
     }
 
-    const mouth = (Math.sin(now / 65) + 1) / 2;
     drawPac(pacX, cy, mouth);
 
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
-    ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.font = "13px ui-monospace, Menlo, monospace";
     ctx.textAlign = "center";
     ctx.fillText(
-      isChase
-        ? "→  pwnhub.in  (chase the ghost)"
-        : "→  blog.pwnhub.in  (ghost is hunting you)",
+      chaseGhost
+        ? "→ portfolio  ·  Pac-Man eats the ghost"
+        : "→ blog  ·  Pac-Man flees, ghost hunts from behind",
       W / 2,
-      H - 16,
+      H - 14,
     );
 
-    if (t < 1) {
-      requestAnimationFrame(frame);
-    } else {
+    if (t < 1) requestAnimationFrame(frame);
+    else {
       window.clearTimeout(failSafe);
-      window.setTimeout(finish, 80);
+      window.setTimeout(finish, 60);
     }
   }
 
