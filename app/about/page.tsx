@@ -5,7 +5,6 @@ import { SketchBackground } from "@/components/sketch-background";
 import { Button } from "@/components/ui/button";
 import { RoughHighlight } from "@/components/ui/rough-highlight";
 import { Separator } from "@/components/ui/separator";
-import { StickyNote } from "@/components/ui/sticky-note";
 import { Notebook } from "@/components/ui/notebook";
 import { DemoForm } from "@/components/demo-form";
 
@@ -37,7 +36,7 @@ export default function AboutPage() {
                 I go by <strong>Gunit</strong>.
               </p>
               <p className="text-lg text-muted-foreground">
-                Network forensics, static web systems, offline-first tools.
+                Linux internals, containers from syscalls, backend &amp; DevOps.
               </p>
               <p className="text-lg text-muted-foreground">
                 This site is Next.js{" "}
@@ -53,27 +52,6 @@ export default function AboutPage() {
                 graph-paper grid — nothing louder.
               </p>
             </Notebook>
-
-            <div className="flex flex-wrap gap-4">
-              <StickyNote
-                id="about-stack"
-                color="yellow"
-                rotate={-2}
-                title="Stack"
-                theme="ink"
-              >
-                Next.js · Tailwind · Rough.js · gray-matter · remark
-              </StickyNote>
-              <StickyNote
-                id="about-ship"
-                color="pink"
-                rotate={2}
-                title="Ships as"
-                theme="ink"
-              >
-                Plain HTML in out/ — host anywhere
-              </StickyNote>
-            </div>
 
             <Link href="/blog/">
               <Button size="lg" theme="ink">

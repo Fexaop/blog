@@ -34,8 +34,11 @@ export const metadata: Metadata = {
     template: "%s · gunit",
   },
   description:
-    "Security writeups, systems notes, and side projects. Hand-drawn UI, static HTML.",
+    "Linux systems notes — containerisation from syscalls, namespaces, and networking.",
   metadataBase: new URL("https://blog.pwnhub.in"),
+  icons: {
+    icon: [{ url: "/favicon_svg.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

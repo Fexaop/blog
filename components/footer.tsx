@@ -3,7 +3,6 @@ import { PortfolioButton } from "@/components/cross-site-nav";
 
 const links = [
   { href: "/blog/", label: "Blog" },
-  { href: "/projects/", label: "Projects" },
   { href: "/about/", label: "About" },
 ];
 
@@ -14,7 +13,7 @@ export function Footer() {
         <div>
           <p className="font-display text-xl italic text-foreground">gunit</p>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            writeups · systems · small tools · blog.pwnhub.in
+            writeups · systems · blog.pwnhub.in
           </p>
         </div>
 
