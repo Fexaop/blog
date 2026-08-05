@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# gunit — bydefaulthuman static blog
 
-## Getting Started
+Fully static Next.js blog. Visual system:
 
-First, run the development server:
+- **bydefaulthuman** (Rough.js) for buttons, cards, badges, inputs, sticky notes, separators
+- Dark sketchbook base + faint graph-paper grid
+- Caveat + Kalam hand fonts
+- **No neo-brutalism**
+- `output: 'export'` → plain HTML in `out/`
+
+## Commands
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
+pnpm build   # → out/
+pnpm lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deploy (GitHub Pages + Actions)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+CI/CD is set up with the latest GitHub Pages Actions:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Workflow | Trigger | What it does |
+|----------|---------|--------------|
+| `.github/workflows/ci.yml` | PR + push to `main` | `pnpm lint` + `pnpm build` |
+| `.github/workflows/deploy.yml` | push to `main` + manual | Build static `out/` → deploy to Pages |
 
-## Learn More
+### One-time GitHub setup
 
-To learn more about Next.js, take a look at the following resources:
+1. Push this repo to GitHub (default branch `main`).
+2. Open **Settings → Pages**.
+3. Under **Build and deployment → Source**, choose **GitHub Actions** (not “Deploy from a branch”).
+4. Push to `main` (or run **Actions → Deploy to GitHub Pages → Run workflow**).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### URLs
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Project site** (`https://USER.github.io/REPO/`): `basePath` is set automatically from `actions/configure-pages`.
+- **User/org site** (`https://USER.github.io/`): base path is empty; works when the repo is named `USER.github.io`.
 
-## Deploy on Vercel
+Local builds keep `basePath` unset so `pnpm dev` / `pnpm build` stay at `/`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Add a post
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Create `content/blog/my-slug.md` with frontmatter, then `pnpm build`.
+
+## License
+
+MIT
+
