@@ -5,22 +5,23 @@ import { playPacmanTransition, consumeXSiteArrival } from "@/lib/pacman-transiti
 import { PORTFOLIO_URL } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 
-/** Runs on every blog page: soft-land after Pac-Man handoff (no loader flash). */
+/** Soft-land after Pac-Man handoff (query param ?xsite=…) */
 export function XSiteArrival() {
   useEffect(() => {
     const dir = consumeXSiteArrival();
     if (!dir) return;
-    // Brief black veil that fades so browser paint isn't a white flash
+    // Cover first paint, then fade
     const veil = document.createElement("div");
+    veil.id = "pwnhub-arrival-veil";
     veil.style.cssText =
-      "position:fixed;inset:0;z-index:99999;background:#000;pointer-events:none;transition:opacity .45s ease";
+      "position:fixed;inset:0;z-index:99999;background:#000;pointer-events:none;opacity:1;transition:opacity .4s ease";
     document.body.appendChild(veil);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         veil.style.opacity = "0";
       });
     });
-    window.setTimeout(() => veil.remove(), 500);
+    window.setTimeout(() => veil.remove(), 450);
   }, []);
   return null;
 }
