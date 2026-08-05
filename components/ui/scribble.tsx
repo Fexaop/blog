@@ -40,13 +40,16 @@ export interface ScribbleProps extends HTMLAttributes<HTMLSpanElement> {
   type?: ScribbleType;
 }
 
+type WindowWithCrumble = Window & { __crumble_ann_kf?: boolean };
+
 function ensureKeyframes() {
   if (typeof window === "undefined") return;
-  if ((window as any).__crumble_ann_kf) return;
+  const win = window as WindowWithCrumble;
+  if (win.__crumble_ann_kf) return;
   const s = document.createElement("style");
   s.textContent = `@keyframes crumble-annotation-dash { to { stroke-dashoffset: 0; } }`;
   document.head.appendChild(s);
-  (window as any).__crumble_ann_kf = true;
+  win.__crumble_ann_kf = true;
 }
 
 /** Distort a rectangle into a noisy polygon */

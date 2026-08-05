@@ -40,7 +40,7 @@ export function RoughRect({
 }: RoughRectProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mountSeed = useRef(randomSeed());
-  const { drawRect, svgRef, theme, animateOnHover } = useRough({
+  const { drawRect, svgRef, animateOnHover } = useRough({
     stableId: id,
     theme: themeProp,
     variant: "border",

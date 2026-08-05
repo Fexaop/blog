@@ -61,7 +61,7 @@ export function useRough({
         seed: resolvedSeed,
       });
     },
-    [animateOnHover, options, stableId, theme, variant],
+    [options, stableId, theme, variant],
   );
 
   const drawRect = useCallback(

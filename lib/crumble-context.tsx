@@ -3,7 +3,6 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type PropsWithChildren,
@@ -19,20 +18,16 @@ const SetThemeContext = createContext<(theme: CrumbleTheme) => void>(() => {});
 
 export function CrumbleProvider({
   children,
-  theme,
+  theme: themeProp,
   animateOnMount,
   animateOnHover,
 }: PropsWithChildren<Partial<CrumbleConfig>>) {
   const config = getCrumbleConfig();
-  const [currentTheme, setCurrentTheme] = useState<CrumbleTheme>(
-    theme ?? config.theme,
+  // Controlled when `theme` prop is passed; otherwise local (setTheme) state
+  const [uncontrolledTheme, setUncontrolledTheme] = useState<CrumbleTheme>(
+    themeProp ?? config.theme,
   );
-
-  useEffect(() => {
-    if (theme !== undefined) {
-      setCurrentTheme(theme);
-    }
-  }, [theme]);
+  const currentTheme = themeProp ?? uncontrolledTheme;
 
   const contextValue = useMemo(
     () => ({
@@ -45,7 +40,7 @@ export function CrumbleProvider({
 
   return (
     <CrumbleContext.Provider value={contextValue}>
-      <SetThemeContext.Provider value={setCurrentTheme}>
+      <SetThemeContext.Provider value={setUncontrolledTheme}>
         <div data-crumble-theme={currentTheme} className="min-h-full">
           {children}
         </div>
