@@ -20,39 +20,58 @@ sudo ./iptui              # monitor + apply rules
 
 ## Packet path (IPv4)
 
+One interconnect graph. At each chain, tables run **raw → mangle → nat → filter → security** when that table has the chain.
+
 ```
-                    ┌──────── raw PREROUTING
-                    │
-  NIC ──► PREROUTING (mangle) ──► PREROUTING (nat) ──► routing decision
-                    │
-         ┌──────────┴──────────┐
-         │ local               │ forward
-         ▼                     ▼
-   INPUT (mangle)        FORWARD (mangle)
-   INPUT (filter)        FORWARD (filter)
-   INPUT (security)      FORWARD (security)
-         │                     │
-         ▼                     │
-      local process            │
-         │                     │
-         ▼                     │
-   OUTPUT (raw)                │
-   OUTPUT (mangle)             │
-   OUTPUT (nat)                │
-   OUTPUT (filter)             │
-   OUTPUT (security)           │
-         │                     │
-         └──────────┬──────────┘
-                    ▼
-            POSTROUTING (mangle)
-            POSTROUTING (nat)
-                    ▼
-                   NIC
+                              NIC (in)
+                                 │
+                                 ▼
+                    ┌────────────────────────┐
+                    │      PREROUTING        │
+                    │   raw · mangle · nat   │
+                    └────────────┬───────────┘
+                                 │
+                                 ▼
+                    ┌────────────────────────┐
+                    │   routing decision     │
+                    └─────┬────────────┬─────┘
+                 local    │            │    forward
+                          ▼            ▼
+           ┌──────────────────┐  ┌──────────────────┐
+           │      INPUT       │  │     FORWARD      │
+           │ mangle · filter  │  │ mangle · filter  │
+           │    · security    │  │    · security    │
+           └────────┬─────────┘  └────────┬─────────┘
+                    │                     │
+                    ▼                     │
+           ┌──────────────────┐           │
+           │  local process   │           │
+           └────────┬─────────┘           │
+                    │                     │
+                    ▼                     │
+           ┌──────────────────┐           │
+           │      OUTPUT      │           │
+           │ raw · mangle ·   │           │
+           │ nat · filter ·   │           │
+           │    security      │           │
+           └────────┬─────────┘           │
+                    │                     │
+                    └──────────┬──────────┘
+                               ▼
+                    ┌────────────────────────┐
+                    │     POSTROUTING        │
+                    │     mangle · nat       │
+                    └────────────┬───────────┘
+                                 │
+                                 ▼
+                              NIC (out)
 ```
 
-**Ingress (into this host):** typically `PREROUTING` → `INPUT`.  
-**Egress (from this host):** typically `OUTPUT` → `POSTROUTING`.  
-**Forward (router/firewall):** `PREROUTING` → `FORWARD` → `POSTROUTING`.
+| Path | Through the graph |
+|------|-------------------|
+| **Ingress** | NIC in → `PREROUTING` → local → `INPUT` → process |
+| **Egress** | process → `OUTPUT` → `POSTROUTING` → NIC out |
+| **Forward** | NIC in → `PREROUTING` → forward → `FORWARD` → `POSTROUTING` → NIC out |
 
 iptui’s monitor focuses on **filter INPUT / OUTPUT**.  
 The **add-rule** page (`a`) can target any table/chain listed below.
