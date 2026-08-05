@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PortfolioButton } from "@/components/cross-site-nav";
 
 const links = [
   { href: "/blog/", label: "Blog" },
@@ -13,11 +14,11 @@ export function Footer() {
         <div>
           <p className="font-display text-xl italic text-foreground">gunit</p>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            writeups · systems · small tools
+            writeups · systems · small tools · blog.pwnhub.in
           </p>
         </div>
 
-        <nav aria-label="Footer">
+        <nav aria-label="Footer" className="flex flex-wrap items-center gap-4">
           <ul className="flex flex-wrap gap-4 text-[13px] text-muted-foreground">
             {links.map((link) => (
               <li key={link.href}>
@@ -30,20 +31,16 @@ export function Footer() {
               </li>
             ))}
           </ul>
+          <PortfolioButton />
         </nav>
       </div>
 
       <p className="mx-auto mt-8 max-w-5xl text-[12px] text-muted-foreground/70">
-        UI from{" "}
-        <a
-          href="https://bydefaulthuman.fun"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline underline-offset-2 hover:text-foreground"
-        >
-          bydefaulthuman
-        </a>
-        {" · "}static export
+        portfolio{" "}
+        <span className="text-foreground">pwnhub.in</span>
+        {" · "}
+        blog{" "}
+        <span className="text-foreground">blog.pwnhub.in</span>
       </p>
     </footer>
   );

@@ -13,20 +13,37 @@ export interface Project {
 
 export const projects: Project[] = [
   {
-    slug: "neo-blog",
-    title: "This site",
-    oneLiner: "Static Next.js blog with hand-drawn UI components",
+    slug: "pwnhub-portfolio",
+    title: "pwnhub.in",
+    oneLiner: "Portfolio — FEXA / Gunit · Backend & DevOps",
     description:
-      "Markdown posts, App Router static export, bydefaulthuman buttons/cards, deployable as plain HTML.",
+      "Interactive portfolio with WebGL, WASM terminal, and scroll-driven scenes. Live at pwnhub.in.",
+    stack: ["Astro", "WebGL", "GSAP", "WASM"],
+    role: "Solo",
+    status: "live",
+    year: "2026",
+    href: "https://pwnhub.in",
+    highlights: [
+      "pwnhub.in production",
+      "Pac-Man cross-nav to this blog",
+      "Custom loaders & ferrofluid bg",
+    ],
+  },
+  {
+    slug: "neo-blog",
+    title: "blog.pwnhub.in",
+    oneLiner: "This static Next.js lab notebook",
+    description:
+      "Markdown posts, App Router static export, bydefaulthuman UI, GitHub Pages + CNAME.",
     stack: ["Next.js", "Tailwind", "Rough.js", "Markdown"],
     role: "Solo",
     status: "live",
     year: "2026",
     href: "/",
     highlights: [
-      "output: 'export' → out/",
-      "Ink-theme rough borders on cards",
-      "No CMS, no server runtime",
+      "blog.pwnhub.in CNAME",
+      "Pac-Man handoff ↔ portfolio",
+      "Fully static out/",
     ],
   },
   {

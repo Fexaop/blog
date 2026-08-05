@@ -1,18 +1,24 @@
 import type { NextConfig } from "next";
 
 /**
- * Static export for GitHub Pages (and any static host).
- * `PAGES_BASE_PATH` is set by actions/configure-pages in CI so project sites
- * (user.github.io/repo) get the correct `/repo` prefix automatically.
+ * Static export for GitHub Pages + custom domain blog.pwnhub.in.
+ * Custom domain → always root path (no /repo prefix).
+ * Set FORCE_PAGES_BASE_PATH only if you deploy without CNAME.
  */
+const useCustomDomain = true;
+const basePath =
+  useCustomDomain
+    ? undefined
+    : process.env.PAGES_BASE_PATH || undefined;
+
 const nextConfig: NextConfig = {
   output: "export",
   images: {
     unoptimized: true,
   },
   trailingSlash: true,
-  basePath: process.env.PAGES_BASE_PATH || undefined,
-  assetPrefix: process.env.PAGES_BASE_PATH || undefined,
+  basePath,
+  assetPrefix: basePath,
 };
 
 export default nextConfig;

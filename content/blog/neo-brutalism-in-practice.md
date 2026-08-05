@@ -1,50 +1,18 @@
 ---
-title: "Neo-Brutalism in Practice"
-description: "Design tokens, hard shadows, and how to mix Rough.js accents without making the whole UI feel sketched."
+title: "Consectetur Adipiscing Elit"
+description: "Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur."
 date: "2026-04-02"
-tags: ["design", "css", "ui"]
+tags: ["design", "lorem"]
 featured: true
 author: "Gunit"
 ---
 
-Neo-brutalism is not "ugly on purpose." It's **high-contrast geometry with honest materials** — borders you can see, shadows that don't blur, type that doesn't whisper.
+At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.
 
-## Tokens first
+## Similique sunt
 
-Lock the palette in CSS variables:
+Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio.
 
-```css
-:root {
-  --background: #0a0a0a;
-  --foreground: #fafafa;
-  --primary: #a855f7;
-  --border: #a855f7;
-  --shadow: #a855f7;
-}
-```
+> Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus.
 
-Then build utilities:
-
-- `border: 3px solid var(--border)`
-- `box-shadow: 4px 4px 0 0 var(--shadow)` — **no blur**
-- radius ≤ 6px
-
-## Where hand-drawn belongs
-
-Use Rough.js / bydefaulthuman for:
-
-- Primary buttons
-- Feature cards
-- Form inputs
-
-Do **not** use notebook textures, paper backgrounds, or rough strokes on the layout shell. The chrome stays modern and technical; the accents feel human.
-
-## Hierarchy rule
-
-| Layer        | Treatment              |
-| ------------ | ---------------------- |
-| Page shell   | Neo-brutal / clean CSS |
-| Interactive  | Ink theme rough strokes |
-| Body text    | High-contrast typography |
-
-If everything is sketched, nothing feels intentional.
+Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae.

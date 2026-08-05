@@ -1,36 +1,25 @@
 ---
-title: "Welcome to the Lab"
-description: "First post — what this blog is about, the stack behind it, and why the UI is pure bydefaulthuman."
+title: "Lorem Ipsum Lab Notes"
+description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Placeholder post for the static blog."
 date: "2026-03-01"
-tags: ["meta", "design", "nextjs"]
+tags: ["meta", "lorem"]
 featured: true
 author: "Gunit"
 ---
 
-This site is a **static lab notebook** for security research, systems tinkering, and build notes. No server. No runtime CMS. Just markdown, a build step, and HTML you can host anywhere.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
-## Design intent
+## Dolor sit amet
 
-The visual system is **bydefaulthuman all the way**:
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-1. Rough.js ink borders on buttons, cards, badges, inputs
-2. Caveat for display accents + RoughHighlight underlines
-3. A faint graph-paper grid in the background — nothing else
+- Pellentesque habitant morbi tristique
+- Senectus et netus et malesuada
+- Fames ac turpis egestas
 
-No thick offset shadows. No neo-brutal chrome. The sketch *is* the UI.
+```text
+Lorem // ipsum placeholder
+dolor = sit.amet(consectetur)
+```
 
-## Stack
-
-- **Next.js** App Router with `output: 'export'`
-- **TypeScript** + **Tailwind CSS**
-- Markdown posts via `gray-matter` + `remark`
-- Selective Rough.js components from bydefaulthuman
-
-## What you'll find here
-
-- Writeups and reverse notes
-- Architecture rants that stay technical
-- Small tools and experiments
-- Design decisions that ship as code
-
-If you want to add a post, drop a `.md` file in `content/blog/` with frontmatter and rebuild. That's the whole CMS.
+Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris.

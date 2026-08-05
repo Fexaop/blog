@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { PortfolioButton } from "@/components/cross-site-nav";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -26,7 +27,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
         <Link
           href="/"
           className="font-display text-3xl font-semibold tracking-tight text-foreground"
@@ -53,20 +54,23 @@ export function Header() {
               {item.label}
             </Link>
           ))}
+          <PortfolioButton className="ml-2" />
         </nav>
 
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="md:hidden"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls="mobile-nav"
-          aria-label={open ? "Close menu" : "Open menu"}
-        >
-          {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </Button>
+        <div className="flex items-center gap-2 md:hidden">
+          <PortfolioButton />
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            aria-label={open ? "Close menu" : "Open menu"}
+          >
+            {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </Button>
+        </div>
       </div>
 
       {open ? (

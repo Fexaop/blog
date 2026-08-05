@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Caveat, Geist, Geist_Mono, Kalam } from "next/font/google";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { XSiteArrival } from "@/components/cross-site-nav";
 import { CrumbleProvider } from "@/lib/crumble-context";
 import "./globals.css";
 
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
   },
   description:
     "Security writeups, systems notes, and side projects. Hand-drawn UI, static HTML.",
-  metadataBase: new URL("https://gunit.dev"),
+  metadataBase: new URL("https://blog.pwnhub.in"),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -101,6 +102,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </svg>
 
         <CrumbleProvider theme="ink">
+          <XSiteArrival />
           <a href="#main" className="skip-link">
             Skip to content
           </a>
