@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 980" role="img" aria-labelledby="title desc">
+  <title id="title">IPv4 packet path through netfilter</title>
+  <desc id="desc">Excalidraw-style diagram of NIC in, PREROUTING, routing decision, INPUT, FORWARD, local process, OUTPUT, POSTROUTING, NIC out.</desc>
+  <defs>
+    <filter id="rough" x="-3%" y="-3%" width="106%" height="106%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" result="noise" seed="11"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.15" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <marker id="arrowHead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#a78bfa"/>
+    </marker>
+    <style>
+      .box { fill: #1e1b2e; stroke: #c4b5fd; stroke-width: 2; }
+      .box-soft { fill: #252035; stroke: #a78bfa; stroke-width: 2; }
+      .box-route { fill: #15222c; stroke: #67e8f9; stroke-width: 2; stroke-dasharray: 7 4; }
+      .box-proc { fill: #17261f; stroke: #86efac; stroke-width: 2; }
+      .nic { fill: #2a2038; stroke: #e9d5ff; stroke-width: 2.2; }
+      .label { fill: #f5f3ff; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 600; }
+      .sub { fill: #c4b5fd; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+      .hint { fill: #94a3b8; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; }
+      .path { fill: none; stroke: #a78bfa; stroke-width: 2; marker-end: url(#arrowHead); }
+      .path-plain { fill: none; stroke: #a78bfa; stroke-width: 2; }
+      .path-dim { fill: none; stroke: #64748b; stroke-width: 1.8; marker-end: url(#arrowHead); }
+      .tag { fill: #c4b5fd; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 600; }
+      .legend { fill: #94a3b8; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 11px; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="720" height="980" fill="#121018" rx="14"/>
+
+  <text x="360" y="40" text-anchor="middle" class="label" style="font-size:18px">IPv4 packet path (netfilter hooks)</text>
+  <text x="360" y="62" text-anchor="middle" class="hint">at each hook: raw → mangle → nat → filter → security (when present)</text>
+
+  <!-- NIC in -->
+  <g filter="url(#rough)">
+    <rect class="nic" x="275" y="86" width="170" height="46" rx="12"/>
+  </g>
+  <text x="360" y="115" text-anchor="middle" class="label">NIC (in)</text>
+
+  <path class="path" d="M360 132 L360 162"/>
+
+  <!-- PREROUTING -->
+  <g filter="url(#rough)">
+    <rect class="box" x="200" y="168" width="320" height="72" rx="14"/>
+  </g>
+  <text x="360" y="198" text-anchor="middle" class="label">PREROUTING</text>
+  <text x="360" y="220" text-anchor="middle" class="sub">raw · mangle · nat</text>
+
+  <path class="path" d="M360 240 L360 270"/>
+
+  <!-- routing -->
+  <g filter="url(#rough)">
+    <rect class="box-route" x="220" y="276" width="280" height="54" rx="14"/>
+  </g>
+  <text x="360" y="310" text-anchor="middle" class="label">routing decision</text>
+
+  <!-- fork -->
+  <path class="path-plain" d="M360 330 L360 362"/>
+  <path class="path-plain" d="M200 362 L520 362"/>
+  <path class="path" d="M200 362 L200 400"/>
+  <path class="path" d="M520 362 L520 400"/>
+  <text x="145" y="355" text-anchor="middle" class="tag">local</text>
+  <text x="575" y="355" text-anchor="middle" class="tag">forward</text>
+
+  <!-- INPUT -->
+  <g filter="url(#rough)">
+    <rect class="box-soft" x="80" y="410" width="240" height="80" rx="14"/>
+  </g>
+  <text x="200" y="442" text-anchor="middle" class="label">INPUT</text>
+  <text x="200" y="466" text-anchor="middle" class="sub">mangle · filter · security</text>
+
+  <!-- FORWARD -->
+  <g filter="url(#rough)">
+    <rect class="box-soft" x="400" y="410" width="240" height="80" rx="14"/>
+  </g>
+  <text x="520" y="442" text-anchor="middle" class="label">FORWARD</text>
+  <text x="520" y="466" text-anchor="middle" class="sub">mangle · filter · security</text>
+
+  <path class="path" d="M200 490 L200 528"/>
+
+  <!-- local process -->
+  <g filter="url(#rough)">
+    <rect class="box-proc" x="90" y="534" width="220" height="52" rx="14"/>
+  </g>
+  <text x="200" y="566" text-anchor="middle" class="label">local process</text>
+
+  <path class="path" d="M200 586 L200 624"/>
+
+  <!-- OUTPUT -->
+  <g filter="url(#rough)">
+    <rect class="box" x="80" y="630" width="240" height="88" rx="14"/>
+  </g>
+  <text x="200" y="662" text-anchor="middle" class="label">OUTPUT</text>
+  <text x="200" y="684" text-anchor="middle" class="sub">raw · mangle · nat</text>
+  <text x="200" y="702" text-anchor="middle" class="sub">filter · security</text>
+
+  <!-- merge lines into POSTROUTING -->
+  <path class="path-plain" d="M200 718 L200 770"/>
+  <path class="path-plain" d="M520 490 L520 770"/>
+  <path class="path-plain" d="M200 770 L520 770"/>
+  <path class="path" d="M360 770 L360 808"/>
+
+  <!-- POSTROUTING -->
+  <g filter="url(#rough)">
+    <rect class="box" x="200" y="814" width="320" height="64" rx="14"/>
+  </g>
+  <text x="360" y="842" text-anchor="middle" class="label">POSTROUTING</text>
+  <text x="360" y="862" text-anchor="middle" class="sub">mangle · nat</text>
+
+  <path class="path" d="M360 878 L360 910"/>
+
+  <!-- NIC out -->
+  <g filter="url(#rough)">
+    <rect class="nic" x="275" y="916" width="170" height="46" rx="12"/>
+  </g>
+  <text x="360" y="945" text-anchor="middle" class="label">NIC (out)</text>
+</svg>

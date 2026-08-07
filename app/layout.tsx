@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Caveat, Geist, Geist_Mono, Kalam } from "next/font/google";
+import { Geist, Geist_Mono, Modak } from "next/font/google";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { XSiteArrival } from "@/components/cross-site-nav";
@@ -16,16 +16,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const caveat = Caveat({
-  variable: "--font-caveat",
+const modak = Modak({
+  variable: "--font-modak",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const kalam = Kalam({
-  variable: "--font-kalam",
-  subsets: ["latin"],
-  weight: ["300", "400", "700"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -45,7 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${caveat.variable} ${kalam.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${modak.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <svg

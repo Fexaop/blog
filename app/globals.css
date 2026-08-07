@@ -20,8 +20,9 @@
   --color-purple: var(--purple);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-caveat);
-  --font-hand: var(--font-kalam);
+  --font-display: var(--font-modak);
+  --font-hand: Monaco, Menlo, Consolas, "Liberation Mono", "Courier New",
+    monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -89,11 +90,15 @@ body {
 }
 
 .font-display {
-  font-family: var(--font-caveat), cursive;
+  font-family: var(--font-modak), system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
 .font-hand {
-  font-family: var(--font-kalam), cursive;
+  font-family: Monaco, Menlo, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+  letter-spacing: -0.01em;
 }
 
 .prose-sketch {
@@ -123,13 +128,143 @@ body {
 
 .prose-sketch h2,
 .prose-sketch h3 {
-  font-family: var(--font-caveat), cursive;
-  font-weight: 600;
+  font-family: var(--font-modak), system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
 .prose-sketch pre {
+  position: relative;
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+.prose-sketch pre code {
+  display: block;
+  font-size: 0.875em;
+  line-height: 1.7;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0;
+}
+
+.prose-sketch :not(pre) > code {
+  border-radius: 0.3rem;
+  background: oklch(0.24 0.02 300);
+  padding: 0.15em 0.4em;
+  font-size: 0.875em;
+  font-weight: 500;
+  color: #e9d5ff;
+}
+
+/* Shiki / rehype-pretty-code */
+.prose-sketch figure[data-rehype-pretty-code-figure] {
+  margin: 1.5em 0;
+}
+
+.prose-sketch figure[data-rehype-pretty-code-figure] pre {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  background: oklch(0.18 0.01 280) !important;
+}
+
+.prose-sketch figure[data-rehype-pretty-code-figure] code {
+  counter-reset: line;
+}
+
+.prose-sketch [data-line] {
+  display: inline-block;
+  width: 100%;
+  padding-inline: 0;
+}
+
+.prose-sketch [data-rehype-pretty-code-title] {
+  margin-bottom: 0;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: oklch(0.22 0.01 280);
+  padding: 0.4rem 0.9rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.prose-sketch figure:has([data-rehype-pretty-code-title]) pre {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* Code block copy button */
+.code-block-wrap {
+  position: relative;
+}
+
+.code-block-wrap .code-copy-btn {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: oklch(0.22 0.01 280 / 0.92);
+  color: var(--muted-foreground);
+  padding: 0.28rem 0.55rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.7rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.code-block-wrap:hover .code-copy-btn,
+.code-block-wrap:focus-within .code-copy-btn,
+.code-block-wrap .code-copy-btn:focus-visible {
+  opacity: 1;
+}
+
+.code-block-wrap .code-copy-btn:hover {
+  color: var(--foreground);
+  border-color: color-mix(in srgb, #a855f7 50%, var(--border));
+}
+
+.code-block-wrap .code-copy-btn[data-copied="true"] {
+  opacity: 1;
+  color: #c084fc;
+  border-color: color-mix(in srgb, #a855f7 60%, var(--border));
+}
+
+/* Excalidraw-style diagram embeds */
+.prose-sketch .diagram-frame {
+  margin: 1.75em 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: oklch(0.17 0.008 280);
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.prose-sketch .diagram-frame img,
+.prose-sketch .diagram-frame svg {
+  display: block;
+  margin-inline: auto;
+  max-width: 100%;
+  height: auto;
+}
+
+.prose-sketch .diagram-caption {
+  margin-top: 0.65rem;
+  text-align: center;
+  font-size: 0.85em;
+  color: var(--muted-foreground);
 }
 
 :focus-visible {

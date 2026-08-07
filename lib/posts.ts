@@ -1,9 +1,13 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
-import { remark } from "remark";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
-import remarkHtml from "remark-html";
+import remarkRehype from "remark-rehype";
+import rehypePrettyCode from "rehype-pretty-code";
+import rehypeStringify from "rehype-stringify";
+import type { Options as PrettyCodeOptions } from "rehype-pretty-code";
 
 const postsDirectory = path.join(process.cwd(), "content/blog");
 
@@ -44,6 +48,27 @@ function parseFrontmatter(data: Record<string, unknown>): PostFrontmatter {
     featured: Boolean(data.featured),
     author: data.author ? String(data.author) : "Gunit",
   };
+}
+
+const prettyCodeOptions: PrettyCodeOptions = {
+  theme: "github-dark-dimmed",
+  keepBackground: false,
+  // Only fenced blocks get a language; leave bare ``inline`` alone.
+  defaultLang: {
+    block: "text",
+  },
+};
+
+async function markdownToHtml(markdown: string): Promise<string> {
+  const file = await unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypePrettyCode, prettyCodeOptions)
+    .use(rehypeStringify, { allowDangerousHtml: true })
+    .process(markdown);
+
+  return String(file);
 }
 
 export function getAllPosts(): PostMeta[] {
@@ -87,16 +112,12 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
 
   const fileContents = fs.readFileSync(fullPath, "utf8");
   const { data, content } = matter(fileContents);
-
-  const processedContent = await remark()
-    .use(remarkGfm)
-    .use(remarkHtml, { sanitize: false })
-    .process(content);
+  const contentHtml = await markdownToHtml(content);
 
   return {
     slug,
     ...parseFrontmatter(data),
-    contentHtml: processedContent.toString(),
+    contentHtml,
   };
 }
 

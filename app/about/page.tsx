@@ -48,7 +48,7 @@ export default function AboutPage() {
                 every interactive surface.
               </p>
               <p className="text-lg text-muted-foreground">
-                Rough.js ink borders, Caveat highlights, and a faint
+                Rough.js ink borders, Modak titles, and a faint
                 graph-paper grid — nothing louder.
               </p>
             </Notebook>

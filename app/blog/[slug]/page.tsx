@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { CodeCopyEnhancer } from "@/components/code-copy";
 import { Container } from "@/components/container";
 import { SketchBackground } from "@/components/sketch-background";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +108,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           className="prose prose-invert prose-sketch max-w-none"
           dangerouslySetInnerHTML={{ __html: post.contentHtml }}
         />
+        <CodeCopyEnhancer />
 
         <div className="mt-14">
           <Separator id={`post-nav-${slug}`} label="more notes" />
