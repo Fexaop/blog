@@ -1,8 +1,9 @@
 /**
  * Pac-Man cross-site transition (blog).
  *
- * Space during cinema → real maze + Web Audio SFX.
- * Esc / Enter → navigate.
+ * One continuous maze from the start (same sprites everywhere).
+ * Intro = autoplay scene. Space = take over + show full HUD.
+ * Esc / Enter = navigate away.
  */
 
 import {
@@ -11,9 +12,8 @@ import {
   type XSiteDirection,
 } from "@/lib/site";
 
-const CINEMA_MS = 2600;
+const INTRO_MS = 3200;
 
-// # wall  . pellet  o power  - gate  P pac-start  space empty/tunnel
 const MAZE_STR = [
   "###################",
   "#........#........#",
@@ -43,6 +43,7 @@ const COLS = MAZE_STR[0].length;
 
 type Cell = "wall" | "pellet" | "power" | "gate" | "empty";
 type Dir = { x: number; y: number };
+type Phase = "intro" | "play";
 
 const UP: Dir = { x: 0, y: -1 };
 const DOWN: Dir = { x: 0, y: 1 };
@@ -117,7 +118,7 @@ function createSfx() {
       o.start(t0);
       o.stop(t0 + dur + 0.02);
     } catch {
-      /* no audio */
+      /* */
     }
   };
   let chompHi = true;
@@ -135,7 +136,7 @@ function createSfx() {
       beep(659, 0.14, "square", 0.08, 0.2);
     },
     chomp: () => {
-      beep(chompHi ? 620 : 480, 0.045, "triangle", 0.05);
+      beep(chompHi ? 620 : 480, 0.04, "triangle", 0.045);
       chompHi = !chompHi;
     },
     power: () => beep(180, 0.22, "sawtooth", 0.05),
@@ -173,10 +174,38 @@ export function playPacmanTransition(
   overlay.style.cssText =
     "position:fixed;inset:0;z-index:2147483646;background:#000;display:flex;align-items:center;justify-content:center;outline:none;touch-action:none";
 
+  // outer frame that holds canvas + optional UI chrome
+  const frame = document.createElement("div");
+  frame.style.cssText =
+    "position:relative;display:flex;flex-direction:column;align-items:stretch;border:3px solid #2121de;border-radius:8px;background:#000;box-shadow:0 0 0 2px #1919a6,0 0 40px rgba(33,33,222,0.35);overflow:hidden;max-width:calc(100vw - 16px)";
+
   const canvas = document.createElement("canvas");
   canvas.tabIndex = 0;
   canvas.style.cssText = "outline:none;display:block;max-width:100%";
-  overlay.appendChild(canvas);
+
+  // HUD components — hidden during intro, revealed on Space
+  const hud = document.createElement("div");
+  hud.style.cssText =
+    "display:none;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;background:#0a0a14;border-top:2px solid #2121de;font-family:Monaco,Menlo,monospace;color:#ffcc00;font-size:12px";
+  const hudScore = document.createElement("span");
+  hudScore.textContent = "SCORE 0";
+  const hudLives = document.createElement("span");
+  hudLives.textContent = "♥♥♥";
+  const hudHint = document.createElement("span");
+  hudHint.style.color = "rgba(255,255,255,0.55)";
+  hudHint.textContent = "arrows / wasd";
+  hud.append(hudScore, hudHint, hudLives);
+
+  const banner = document.createElement("div");
+  banner.style.cssText =
+    "display:flex;align-items:center;justify-content:center;gap:10px;padding:6px 12px;background:#0a0a14;border-bottom:2px solid #2121de;font-family:Monaco,Menlo,monospace;font-size:11px;color:#ffcc00";
+  banner.innerHTML =
+    direction === "to-portfolio"
+      ? "<span>→ portfolio</span><span style='color:rgba(255,255,255,0.5)'>·</span><span style='color:#fff'>space take over</span><span style='color:rgba(255,255,255,0.5)'>·</span><span style='color:rgba(255,255,255,0.55)'>esc skip</span>"
+      : "<span>→ blog</span><span style='color:rgba(255,255,255,0.5)'>·</span><span style='color:#fff'>space take over</span><span style='color:rgba(255,255,255,0.5)'>·</span><span style='color:rgba(255,255,255,0.55)'>esc skip</span>";
+
+  frame.append(banner, canvas, hud);
+  overlay.appendChild(frame);
   document.body.appendChild(overlay);
   document.body.style.overflow = "hidden";
 
@@ -194,28 +223,36 @@ export function playPacmanTransition(
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const ctx = canvas.getContext("2d")!;
   const sfx = createSfx();
+  sfx.resume();
 
   let finished = false;
-  let mode: "cinema" | "game" = "cinema";
-  let cinemaRaf = 0;
-  let gameRaf = 0;
-  let failSafe = 0;
+  let phase: Phase = "intro";
+  let raf = 0;
+  let introTimer = 0;
   let focusTimer = 0;
+  let want: Dir | null = null;
 
   const finish = () => {
     if (finished) return;
     finished = true;
-    window.clearTimeout(failSafe);
+    window.clearTimeout(introTimer);
     window.clearInterval(focusTimer);
-    cancelAnimationFrame(cinemaRaf);
-    cancelAnimationFrame(gameRaf);
+    cancelAnimationFrame(raf);
     document.removeEventListener("keydown", onKeyDown, true);
-    document.removeEventListener("keyup", onKeyUp, true);
     window.location.replace(withXSiteParam(url, direction));
   };
 
-  // input: desired direction (null = keep current)
-  let want: Dir | null = null;
+  const enterPlay = () => {
+    if (phase === "play" || finished) return;
+    phase = "play";
+    window.clearTimeout(introTimer);
+    sfx.resume();
+    sfx.start();
+    hud.style.display = "flex";
+    banner.innerHTML =
+      "<span style='color:#ffcc00'>YOUR MOVE</span><span style='color:rgba(255,255,255,0.5)'>·</span><span style='color:rgba(255,255,255,0.55)'>esc leave</span>";
+    grabFocus();
+  };
 
   const readDir = (e: KeyboardEvent): Dir | null => {
     switch (e.key) {
@@ -235,34 +272,32 @@ export function playPacmanTransition(
       case "s":
       case "S":
         return DOWN;
-      default:
-        switch (e.code) {
-          case "ArrowRight":
-          case "KeyD":
-            return RIGHT;
-          case "ArrowLeft":
-          case "KeyA":
-            return LEFT;
-          case "ArrowUp":
-          case "KeyW":
-            return UP;
-          case "ArrowDown":
-          case "KeyS":
-            return DOWN;
-          default:
-            return null;
-        }
     }
+    switch (e.code) {
+      case "ArrowRight":
+      case "KeyD":
+        return RIGHT;
+      case "ArrowLeft":
+      case "KeyA":
+        return LEFT;
+      case "ArrowUp":
+      case "KeyW":
+        return UP;
+      case "ArrowDown":
+      case "KeyS":
+        return DOWN;
+    }
+    return null;
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.code === "Space" || e.key === " ") {
       e.preventDefault();
       e.stopPropagation();
-      if (mode === "cinema") startGame();
+      enterPlay();
       return;
     }
-    if (e.key === "Escape" || e.key === "Enter" || e.code === "Escape") {
+    if (e.key === "Escape" || e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
       finish();
@@ -273,25 +308,23 @@ export function playPacmanTransition(
       e.preventDefault();
       e.stopPropagation();
       want = d;
-      if (mode === "game") pac.next = d;
-    }
-  };
-
-  const onKeyUp = (e: KeyboardEvent) => {
-    const d = readDir(e);
-    // keep want sticky (classic pacman) — only clear if matching
-    if (d && want && d.x === want.x && d.y === want.y) {
-      // leave sticky on purpose
+      pac.next = d;
+      // pressing a direction during intro also takes over
+      if (phase === "intro") enterPlay();
     }
   };
 
   document.addEventListener("keydown", onKeyDown, true);
-  document.addEventListener("keyup", onKeyUp, true);
   focusTimer = window.setInterval(() => {
     if (!finished && document.activeElement !== canvas) grabFocus();
   }, 300);
 
-  // —— draw helpers ——
+  // auto-leave after intro if player never takes over
+  introTimer = window.setTimeout(() => {
+    if (phase === "intro" && !finished) finish();
+  }, INTRO_MS);
+
+  // —— shared draw (one icon set for whole scene) ——
   function drawPac(
     x: number,
     y: number,
@@ -334,7 +367,12 @@ export function playPacmanTransition(
     const domeR = w / 2;
     ctx.save();
     ctx.translate(x, y);
-    ctx.fillStyle = frightened ? "#2121ff" : color;
+    // flash white near end of fright
+    const flash =
+      frightened && powerUntil - performance.now() < 1800
+        ? Math.floor(performance.now() / 120) % 2 === 0
+        : false;
+    ctx.fillStyle = frightened ? (flash ? "#fff" : "#2121ff") : color;
     ctx.beginPath();
     ctx.moveTo(left, skirt);
     ctx.lineTo(left, top + domeR);
@@ -351,11 +389,12 @@ export function playPacmanTransition(
     }
     ctx.closePath();
     ctx.fill();
+
     const eyeY = -h * 0.12;
     const eyeX = w * 0.22;
     const eyeRx = w * 0.14;
     const eyeRy = w * 0.17;
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = frightened && !flash ? "#fff" : "#fff";
     ctx.beginPath();
     ctx.ellipse(-eyeX, eyeY, eyeRx, eyeRy, 0, 0, Math.PI * 2);
     ctx.ellipse(eyeX, eyeY, eyeRx, eyeRy, 0, 0, Math.PI * 2);
@@ -371,132 +410,36 @@ export function playPacmanTransition(
     ctx.restore();
   }
 
-  // —— cinema ——
-  const chaseGhost = direction === "to-portfolio";
-  let cinemaW = Math.min(window.innerWidth, 960);
-  let cinemaH = Math.min(Math.round(window.innerHeight * 0.48), 360);
-
-  function sizeCinema() {
-    cinemaW = Math.min(window.innerWidth, 960);
-    cinemaH = Math.min(Math.round(window.innerHeight * 0.48), 360);
-    canvas.width = Math.round(cinemaW * dpr);
-    canvas.height = Math.round(cinemaH * dpr);
-    canvas.style.width = `${cinemaW}px`;
-    canvas.style.height = `${cinemaH}px`;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  function drawEyesOnly(x: number, y: number) {
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.ellipse(x - 4, y, 3.5, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + 4, y, 3.5, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#2121de";
+    ctx.beginPath();
+    ctx.arc(x - 3, y, 1.6, 0, Math.PI * 2);
+    ctx.arc(x + 5, y, 1.6, 0, Math.PI * 2);
+    ctx.fill();
   }
 
-  sizeCinema();
-  const t0 = performance.now();
-  failSafe = window.setTimeout(finish, CINEMA_MS + 800);
-
-  type Candy = { x: number; eaten: boolean; power: boolean };
-  const candy: Candy[] = [];
-  {
-    const laneL = cinemaW * 0.07;
-    const laneR = cinemaW * 0.93;
-    const R = Math.max(18, Math.min(28, cinemaW * 0.034));
-    const pathLen = laneR - laneL - R * 3;
-    for (let i = 0; i < 20; i++) {
-      candy.push({
-        x: laneL + R * 2.2 + (pathLen * i) / 19,
-        eaten: false,
-        power: i === 0 || i === 19,
-      });
-    }
-  }
-
-  function cinemaFrame(now: number) {
-    if (mode !== "cinema" || finished) return;
-    const W = cinemaW;
-    const H = cinemaH;
-    const cy = H * 0.5;
-    const R = Math.max(18, Math.min(28, W * 0.034));
-    const laneL = W * 0.07;
-    const laneR = W * 0.93;
-    const pathLen = laneR - laneL - R * 3;
-    const t = Math.min(1, (now - t0) / CINEMA_MS);
-    const e = t * t * (3 - 2 * t);
-
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, W, H);
-    const top = cy - R * 2.7;
-    const bot = cy + R * 2.7;
-    ctx.strokeStyle = "#2121de";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(laneL - 10, top - 6, laneR - laneL + 20, bot - top + 12);
-
-    const pacX = laneL + R * 1.6 + pathLen * e;
-    const open = (Math.sin(now / 60) + 1) / 2;
-    let ghostX: number;
-    let frightened = false;
-    let eaten = false;
-    if (chaseGhost) {
-      frightened = t > 0.25;
-      const lead = R * 5 * (1 - e * 0.7) + R * 1.4;
-      ghostX = Math.min(laneR - R, pacX + lead);
-      if (t > 0.78) ghostX = pacX + R * 0.85;
-      if (t > 0.88) eaten = true;
-    } else {
-      const minGap = R * 2.8;
-      const startGap = R * 6.5;
-      const gap = startGap - e * (startGap - minGap);
-      ghostX = pacX - Math.max(gap, minGap);
-      if (ghostX < laneL + R) ghostX = laneL + R;
-    }
-
-    const biteX = pacX + R * 0.35;
-    for (const c of candy) {
-      if (!c.eaten && biteX >= c.x) c.eaten = true;
-      if (c.eaten) continue;
-      ctx.fillStyle = c.power ? "#ffb897" : "#ffcc66";
-      ctx.beginPath();
-      ctx.arc(c.x, cy, c.power ? R * 0.42 : R * 0.22, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    if (!eaten) drawGhost(ghostX, cy, R, "#ff0000", RIGHT, frightened);
-    drawPac(pacX, cy, R, RIGHT, open);
-
-    ctx.fillStyle = "rgba(255,255,255,0.75)";
-    ctx.font = "13px Monaco, Menlo, monospace";
-    ctx.textAlign = "center";
-    ctx.fillText(chaseGhost ? "→ portfolio" : "→ blog", W / 2, H - 28);
-    ctx.fillStyle = "#ffcc00";
-    ctx.font = "12px Monaco, Menlo, monospace";
-    ctx.fillText("space = play   ·   esc = skip", W / 2, H - 10);
-
-    if (t < 1) cinemaRaf = requestAnimationFrame(cinemaFrame);
-    else {
-      window.clearTimeout(failSafe);
-      window.setTimeout(finish, 80);
-    }
-  }
-  cinemaRaf = requestAnimationFrame(cinemaFrame);
-
-  // —— game ——
+  // —— game state (always running) ——
   const base = parseMaze();
-  let grid = cloneGrid(base.grid);
+  const grid = cloneGrid(base.grid);
   let TILE = 20;
-  let PAD = 32;
+  const PAD = 8; // tight canvas; HUD lives in HTML chrome
   let score = 0;
   let lives = 3;
-  let remaining = 0;
+  let remaining = countPellets(grid);
   let powerUntil = 0;
   let invulnUntil = 0;
   let deadUntil = 0;
   let won = false;
   let mouth = 0;
-  let lastTs = 0;
+  let lastTs = performance.now();
   let chompCool = 0;
 
-  type Body = {
-    // pixel position of center
-    x: number;
-    y: number;
-    dir: Dir;
-    next: Dir;
-  };
-
+  type Body = { x: number; y: number; dir: Dir; next: Dir };
   type GhostBody = Body & {
     color: string;
     mode: "chase" | "frightened" | "eaten";
@@ -530,9 +473,8 @@ export function playPacmanTransition(
     return false;
   }
 
-  /** solid radius check: sample center + edges */
   function hitsWall(px: number, py: number, allowGate: boolean) {
-    const rad = TILE * 0.35;
+    const rad = TILE * 0.32;
     const samples = [
       [px, py],
       [px - rad, py],
@@ -556,7 +498,6 @@ export function playPacmanTransition(
   function nearCenter(b: Body) {
     const { c, r } = pixelToTile(b.x, b.y);
     const tc = tileCenter(c, r);
-    // keep tight so a single step can leave the zone (was snapping every frame)
     return Math.hypot(b.x - tc.x, b.y - tc.y) < Math.max(1.5, TILE * 0.08);
   }
 
@@ -570,6 +511,20 @@ export function playPacmanTransition(
   function canMoveFrom(b: Body, d: Dir, allowGate: boolean) {
     const { c, r } = pixelToTile(b.x, b.y);
     return !blocked(c + d.x, r + d.y, allowGate);
+  }
+
+  function openDirs(
+    c: number,
+    r: number,
+    allowGate: boolean,
+    forbid?: Dir,
+  ): Dir[] {
+    const opts: Dir[] = [];
+    for (const d of DIRS) {
+      if (forbid && d.x === forbid.x && d.y === forbid.y) continue;
+      if (!blocked(c + d.x, r + d.y, allowGate)) opts.push(d);
+    }
+    return opts;
   }
 
   function resetActors() {
@@ -596,12 +551,12 @@ export function playPacmanTransition(
     });
   }
 
-  function layoutGame() {
-    const maxW = Math.min(window.innerWidth - 16, 760);
-    const maxH = Math.min(window.innerHeight - 24, 840);
-    TILE = Math.max(14, Math.floor(Math.min(maxW / COLS, (maxH - PAD) / ROWS)));
+  function layout() {
+    const maxW = Math.min(window.innerWidth - 24, 720);
+    const maxH = Math.min(window.innerHeight - 100, 780);
+    TILE = Math.max(12, Math.floor(Math.min(maxW / COLS, (maxH - PAD) / ROWS)));
     const w = TILE * COLS;
-    const h = TILE * ROWS + PAD;
+    const h = TILE * ROWS + PAD * 2;
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     canvas.style.width = `${w}px`;
@@ -609,61 +564,37 @@ export function playPacmanTransition(
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function startGame() {
-    if (mode === "game") return;
-    mode = "game";
-    window.clearTimeout(failSafe);
-    cancelAnimationFrame(cinemaRaf);
-    sfx.resume();
-    sfx.start();
-    grid = cloneGrid(base.grid);
-    remaining = countPellets(grid);
-    score = 0;
-    lives = 3;
-    powerUntil = 0;
-    invulnUntil = 0;
-    deadUntil = 0;
-    won = false;
-    chompCool = 0;
-    want = LEFT;
-    layoutGame();
-    resetActors();
-    lastTs = performance.now();
-    grabFocus();
-    gameRaf = requestAnimationFrame(gameFrame);
-  }
+  layout();
+  resetActors();
 
   function moveBody(b: Body, speedPx: number, dt: number, allowGate: boolean) {
-    // reverse anytime
     if (b.next.x === -b.dir.x && b.next.y === -b.dir.y) {
       b.dir = { ...b.next };
     }
 
     const wantTurn = b.next.x !== b.dir.x || b.next.y !== b.dir.y;
-
-    // only snap at centers when turning or when blocked — never every frame
-    // (old bug: snap every frame cancelled all movement)
     if (nearCenter(b)) {
       if (wantTurn && canMoveFrom(b, b.next, allowGate)) {
         snapToCenter(b);
         b.dir = { ...b.next };
       } else if (!canMoveFrom(b, b.dir, allowGate)) {
         snapToCenter(b);
-        // try queued as last resort
         if (canMoveFrom(b, b.next, allowGate)) {
           b.dir = { ...b.next };
         } else {
-          return;
+          // pick any open direction so nobody freezes
+          const { c, r } = pixelToTile(b.x, b.y);
+          const opts = openDirs(c, r, allowGate);
+          if (opts.length === 0) return;
+          b.dir = opts[Math.floor(Math.random() * opts.length)];
+          b.next = b.dir;
         }
       }
     }
 
-    // at least ~2px so we clear the center zone even on high refresh rates
     const step = Math.max(2, speedPx * dt);
     let nx = b.x + b.dir.x * step;
-    let ny = b.y + b.dir.y * step;
-
-    // tunnel wrap
+    const ny = b.y + b.dir.y * step;
     const totalW = TILE * COLS;
     if (nx < 0) nx += totalW;
     if (nx >= totalW) nx -= totalW;
@@ -671,28 +602,67 @@ export function playPacmanTransition(
     if (!hitsWall(nx, ny, allowGate)) {
       b.x = nx;
       b.y = ny;
-      // lock to lane on free axis
       if (b.dir.x !== 0) {
         const { r } = pixelToTile(b.x, b.y);
         b.y = PAD + r * TILE + TILE / 2;
-      } else if (b.dir.y !== 0) {
+      } else {
         const { c } = pixelToTile(b.x, b.y);
         b.x = c * TILE + TILE / 2;
       }
     } else {
-      // ran into a wall — sit on the current tile center
       snapToCenter(b);
     }
+  }
+
+  /** demo AI for intro — keep chomping, prefer pellets */
+  function autopilotPac() {
+    if (!nearCenter(pac)) return;
+    snapToCenter(pac);
+    const { c, r } = pixelToTile(pac.x, pac.y);
+    const opts = openDirs(c, r, false, { x: -pac.dir.x, y: -pac.dir.y });
+    const all = opts.length ? opts : openDirs(c, r, false);
+    if (all.length === 0) return;
+
+    // prefer tile with pellet/power
+    let best = all[0];
+    let bestScore = -1;
+    for (const d of all) {
+      let nc = c + d.x;
+      const nr = r + d.y;
+      if (nc < 0) nc = COLS - 1;
+      if (nc >= COLS) nc = 0;
+      if (nr < 0 || nr >= ROWS) continue;
+      const cell = grid[nr][nc];
+      let s = 0;
+      if (cell === "power") s = 3;
+      else if (cell === "pellet") s = 2;
+      else s = 1;
+      // slight bias to keep current dir for smoother intro
+      if (d.x === pac.dir.x && d.y === pac.dir.y) s += 0.5;
+      if (s > bestScore) {
+        bestScore = s;
+        best = d;
+      }
+    }
+    pac.next = best;
+    pac.dir = best;
   }
 
   function pickGhost(g: GhostBody) {
     if (!nearCenter(g)) return;
     snapToCenter(g);
-
     const { c, r } = pixelToTile(g.x, g.y);
+
     const opts: Dir[] = [];
     for (const d of DIRS) {
-      if (d.x === -g.dir.x && d.y === -g.dir.y && g.mode === "chase") continue;
+      // allow reverse when frightened / eaten so they never trap themselves
+      if (
+        d.x === -g.dir.x &&
+        d.y === -g.dir.y &&
+        g.mode === "chase"
+      ) {
+        continue;
+      }
       const nc = c + d.x;
       const nr = r + d.y;
       if (nr < 0 || nr >= ROWS) continue;
@@ -702,19 +672,25 @@ export function playPacmanTransition(
       const v = grid[nr][cc];
       if (v === "wall") continue;
       if (v === "gate") {
-        // leave house upward, or return when eaten
+        // out of house (up) or return when eaten
         if (!(d.y === -1 || g.mode === "eaten")) continue;
       }
       opts.push(d);
     }
+
+    // always have a fallback including reverse
     if (opts.length === 0) {
-      g.dir = { x: -g.dir.x, y: -g.dir.y };
+      const any = openDirs(c, r, true);
+      if (any.length === 0) return;
+      g.dir = any[0];
       g.next = g.dir;
       return;
     }
 
     if (g.mode === "frightened") {
-      g.dir = opts[Math.floor(Math.random() * opts.length)];
+      // keep moving: prefer continuing, random among options
+      const cont = opts.find((d) => d.x === g.dir.x && d.y === g.dir.y);
+      g.dir = cont ?? opts[Math.floor(Math.random() * opts.length)];
       g.next = g.dir;
       return;
     }
@@ -750,10 +726,16 @@ export function playPacmanTransition(
 
   function killPac(now: number) {
     if (now < invulnUntil) return;
+    if (phase === "intro") {
+      // during intro just bounce — don't end the handoff
+      resetActors();
+      return;
+    }
     sfx.death();
     lives -= 1;
     deadUntil = now + 700;
     invulnUntil = now + 1400;
+    hudLives.textContent = "♥".repeat(Math.max(0, lives));
     if (lives <= 0) {
       window.setTimeout(finish, 1100);
       return;
@@ -763,8 +745,8 @@ export function playPacmanTransition(
     powerUntil = 0;
   }
 
-  function gameFrame(now: number) {
-    if (mode !== "game" || finished) return;
+  function tick(now: number) {
+    if (finished) return;
     let dt = (now - lastTs) / 1000;
     lastTs = now;
     if (!Number.isFinite(dt) || dt <= 0) dt = 1 / 60;
@@ -772,22 +754,24 @@ export function playPacmanTransition(
     mouth += dt * 12;
 
     if (!won && lives > 0 && now > deadUntil) {
-      if (want) pac.next = want;
+      if (phase === "intro") {
+        autopilotPac();
+      } else if (want) {
+        pac.next = want;
+      }
 
-      // ~7 tiles/sec
-      moveBody(pac, TILE * 7, dt, false);
+      moveBody(pac, TILE * (phase === "intro" ? 6 : 7), dt, false);
 
-      // eat pellets at tile under pac
+      // pellets
       const { c, r } = pixelToTile(pac.x, pac.y);
       if (r >= 0 && r < ROWS && nearCenter(pac)) {
-        const v = grid[r][c < 0 ? c + COLS : c >= COLS ? c - COLS : c];
         const cc = ((c % COLS) + COLS) % COLS;
         if (grid[r][cc] === "pellet") {
           grid[r][cc] = "empty";
           score += 10;
           remaining -= 1;
           if (now > chompCool) {
-            sfx.chomp();
+            if (phase === "play") sfx.chomp();
             chompCool = now + 85;
           }
         } else if (grid[r][cc] === "power") {
@@ -795,20 +779,31 @@ export function playPacmanTransition(
           score += 50;
           remaining -= 1;
           powerUntil = now + 6500;
-          sfx.power();
-          for (const g of ghosts) if (g.mode !== "eaten") g.mode = "frightened";
+          if (phase === "play") sfx.power();
+          for (const g of ghosts) {
+            if (g.mode !== "eaten") {
+              g.mode = "frightened";
+              // reverse on fright (classic)
+              g.dir = { x: -g.dir.x, y: -g.dir.y };
+              g.next = g.dir;
+            }
+          }
         }
-        void v;
+        if (phase === "play") hudScore.textContent = `SCORE ${score}`;
       }
 
-      if (remaining <= 0) {
+      if (remaining <= 0 && phase === "play") {
         won = true;
         sfx.win();
         window.setTimeout(finish, 1400);
       }
 
-      if (now >= powerUntil) {
-        for (const g of ghosts) if (g.mode === "frightened") g.mode = "chase";
+      // end fright — ghosts keep moving in chase
+      if (powerUntil > 0 && now >= powerUntil) {
+        powerUntil = 0;
+        for (const g of ghosts) {
+          if (g.mode === "frightened") g.mode = "chase";
+        }
       }
 
       for (const g of ghosts) {
@@ -824,11 +819,11 @@ export function playPacmanTransition(
         pickGhost(g);
         const speed =
           g.mode === "frightened"
-            ? TILE * 3.5
+            ? TILE * 4.2
             : g.mode === "eaten"
               ? TILE * 10
               : TILE * 5.5;
-        // ghosts may pass the house gate; pac may not
+        // always allow gate for ghosts so house exit works + no freeze
         moveBody(g, speed, dt, true);
 
         const ddx = g.x - pac.x;
@@ -837,7 +832,10 @@ export function playPacmanTransition(
           if (g.mode === "frightened") {
             g.mode = "eaten";
             score += 200;
-            sfx.eatGhost();
+            if (phase === "play") {
+              sfx.eatGhost();
+              hudScore.textContent = `SCORE ${score}`;
+            }
           } else if (g.mode === "chase") {
             killPac(now);
           }
@@ -845,22 +843,16 @@ export function playPacmanTransition(
       }
     }
 
-    // draw
+    // —— draw maze (same icons as “outside”) ——
     const W = TILE * COLS;
-    const H = TILE * ROWS + PAD;
+    const H = TILE * ROWS + PAD * 2;
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, W, H);
 
-    ctx.fillStyle = "#ffcc00";
-    ctx.font = `bold ${Math.max(12, Math.floor(TILE * 0.55))}px Monaco, Menlo, monospace`;
-    ctx.textAlign = "left";
-    ctx.fillText(`SCORE ${score}`, 8, 20);
-    ctx.textAlign = "right";
-    ctx.fillText("♥".repeat(Math.max(0, lives)), W - 8, 20);
-    ctx.textAlign = "center";
-    ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.font = "11px Monaco, Menlo, monospace";
-    ctx.fillText("arrows / wasd  ·  esc leave", W / 2, 20);
+    // inner corridor stroke like arcade cabinet
+    ctx.strokeStyle = "#1919a6";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(2, PAD - 2, W - 4, TILE * ROWS + 4);
 
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
@@ -876,7 +868,13 @@ export function playPacmanTransition(
         } else if (v === "pellet") {
           ctx.fillStyle = "#ffb897";
           ctx.beginPath();
-          ctx.arc(x + TILE / 2, y + TILE / 2, Math.max(2, TILE * 0.1), 0, Math.PI * 2);
+          ctx.arc(
+            x + TILE / 2,
+            y + TILE / 2,
+            Math.max(2, TILE * 0.1),
+            0,
+            Math.PI * 2,
+          );
           ctx.fill();
         } else if (v === "power") {
           ctx.fillStyle = "#ffb897";
@@ -889,28 +887,26 @@ export function playPacmanTransition(
 
     const rad = TILE * 0.42;
     for (const g of ghosts) {
-      if (g.mode === "eaten") {
-        ctx.fillStyle = "#fff";
-        ctx.beginPath();
-        ctx.ellipse(g.x - 4, g.y, 3.5, 4, 0, 0, Math.PI * 2);
-        ctx.ellipse(g.x + 4, g.y, 3.5, 4, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#2121de";
-        ctx.beginPath();
-        ctx.arc(g.x - 3, g.y, 1.6, 0, Math.PI * 2);
-        ctx.arc(g.x + 5, g.y, 1.6, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        drawGhost(g.x, g.y, rad, g.color, g.dir, g.mode === "frightened");
-      }
+      if (g.mode === "eaten") drawEyesOnly(g.x, g.y);
+      else drawGhost(g.x, g.y, rad, g.color, g.dir, g.mode === "frightened");
     }
 
-    if (now > deadUntil || lives <= 0) {
+    if (now > deadUntil || lives <= 0 || phase === "intro") {
       const open = (Math.sin(mouth) + 1) / 2;
       drawPac(pac.x, pac.y, rad, pac.dir, open);
     }
 
-    if (won || lives <= 0) {
+    if (phase === "intro") {
+      // soft vignette label on canvas
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillRect(0, H - 22, W, 22);
+      ctx.fillStyle = "#ffcc00";
+      ctx.font = "11px Monaco, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("playing…  space = take over", W / 2, H - 7);
+    }
+
+    if (won || (lives <= 0 && phase === "play")) {
       ctx.fillStyle = "rgba(0,0,0,0.55)";
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = won ? "#ffcc00" : "#ff5555";
@@ -922,8 +918,10 @@ export function playPacmanTransition(
       ctx.fillText("warping…", W / 2, H / 2 + 28);
     }
 
-    gameRaf = requestAnimationFrame(gameFrame);
+    raf = requestAnimationFrame(tick);
   }
+
+  raf = requestAnimationFrame(tick);
 }
 
 export function consumeXSiteArrival(): XSiteDirection | null {
